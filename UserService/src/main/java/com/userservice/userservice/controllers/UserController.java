@@ -2,6 +2,10 @@ package com.userservice.userservice.controllers;
 
 import com.userservice.userservice.entities.User;
 import com.userservice.userservice.services.UserService;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,10 +16,13 @@ import java.util.List;
 @RequestMapping("/users")
 public class UserController {
 
+    private final Logger logger;
     private final UserService userService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService)
+    {
         this.userService = userService;
+        this.logger = LoggerFactory.getLogger(UserController.class);
     }
 
     @PostMapping
@@ -30,8 +37,16 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
+    @CircuitBreaker(name = "ratingHotelBreaker", fallbackMethod = "hotelRatingBreakerFallback")
     public ResponseEntity<User> getUserById(@PathVariable String id) {
         User userById = userService.getUserById(id);
         return ResponseEntity.ok(userById);
+    }
+
+    public ResponseEntity<User> hotelRatingBreakerFallback(String id, Exception ex) {
+        logger.info("Fallback method running: {}", ex.getMessage());
+        User dummy = User.builder().name("Dummy").about("Dummy user is shown since one of the service" +
+                "is down").email("dummy@gmail.com").build();
+        return new ResponseEntity<>(dummy, HttpStatus.BAD_REQUEST);
     }
 }
