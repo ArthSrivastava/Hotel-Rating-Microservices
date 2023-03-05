@@ -41,7 +41,7 @@ management:
 
 #Configurations for Resilience4J
 resilience4j:
-  circuitbreaker:
+  circuitbreaker:       #Circuitbreaker configs
     instances:
       ratingHotelBreaker:
         register-health-indicator: true
@@ -54,4 +54,16 @@ resilience4j:
         sliding-window-size: 10
         sliding-window-type: COUNT_BASED
 
+  retry:               #Retry configs
+    instances:
+      ratingHotelService:
+        max-attempts: 3
+        wait-duration: 3s
+
+  ratelimiter:        #Rate-limiter configs
+    instances:
+      userServiceLimiter:
+        timeout-duration: 0s
+        limit-for-period: 2                         # 2 requests in limit-refresh-period (4)
+        limit-refresh-period: 4s
 
